@@ -1,0 +1,69 @@
+services:
+  ollama:
+    image: ollama/ollama:0.30.0-rc24
+    container_name: local-llm-ollama
+    restart: unless-stopped
+    env_file:
+      - path: .env
+        required: true
+    environment:
+      OLLAMA_KEEP_ALIVE: ${OLLAMA_KEEP_ALIVE:-24h}
+    ports:
+      - "${OLLAMA_PORT:-11434}:11434"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]  
+    volumes:
+      - ollama_data:/root/.ollama
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  model-init:
+    image: ollama/ollama:0.30.0-rc24
+    container_name: local-llm-model-init
+    restart: "no"
+    depends_on:
+      ollama:
+        condition: service_healthy
+    env_file:
+      - path: .env
+        required: true
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]  
+    volumes:
+      - ollama_data:/root/.ollama
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -eu
+        if [ -z "$${OLLAMA_MODELS:-}" ]; then
+          echo "OLLAMA_MODELS is empty. Nothing to pull."
+          exit 0
+        fi
+        IFS=','
+        for model in $${OLLAMA_MODELS}; do
+          model_trimmed="$$(echo "$$model" | xargs)"
+          if [ -n "$$model_trimmed" ]; then
+            echo "Pulling model: $$model_trimmed"
+            ollama pull "$$model_trimmed"
+          fi
+        done
+        echo "Model preloading complete."
+
+volumes:
+  ollama_data:
