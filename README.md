@@ -1,5 +1,7 @@
 # LLM Chat Bot - Getting Started
 
+(The whole explaination can be found at https://codeastar.com/cloud-vs-local-llm-the-real-tradeoffs-and-how-to-run-your-own-ai-in-minutes/) 
+
 This is a local LLM chat bot program that runs on your machine using Ollama and Python.
 
 This README is separated into 2 parts:
@@ -125,4 +127,4 @@ docker compose down
 ## Notes
 
 - Keep the Ollama server running in the background while using the chat bot
-- You can switch between models by pulling different ones with `ollama pull <model name>` and either pass the model as an ar 
+- You can switch between models by pulling different ones with `ollama pull <model name>` and either pass the model name as an argument or update the `.env` file 
